@@ -7,9 +7,11 @@ using System.Web.Mvc;
 using System.Web.Security;
 using DotNetOpenAuth.AspNet;
 using Microsoft.Web.WebPages.OAuth;
+using Recaptcha.Web.Mvc;
 using WebMatrix.WebData;
 using MvcCaptcha.Filters;
 using MvcCaptcha.Models;
+using Recaptcha.Web;
 
 namespace MvcCaptcha.Controllers
 {
@@ -76,6 +78,22 @@ namespace MvcCaptcha.Controllers
         {
             if (ModelState.IsValid)
             {
+                var recaptchaHelper = this.GetRecaptchaVerificationHelper();
+
+                if (String.IsNullOrEmpty(recaptchaHelper.Response))
+                {
+                    ModelState.AddModelError("", "Captcha answer cannot be empty");
+                    return View(model);
+                }
+
+                var recaptchaResult = recaptchaHelper.VerifyRecaptchaResponse();
+
+                if (recaptchaResult != RecaptchaVerificationResult.Success)
+                {
+                    ModelState.AddModelError("", "Incorrect captcha answer");
+                    return View(model);
+                }
+
                 // Attempt to register the user
                 try
                 {
